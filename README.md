@@ -73,6 +73,23 @@ database operation; the public signup and Google sign-in flows always create
 ordinary `USER` accounts. There is intentionally no public admin bootstrap
 endpoint.
 
+### Deploying the API to Vercel
+
+If the backend Vercel project is connected to the parent repository, set its
+Root Directory to `backend`; if it is connected directly to the backend
+repository, keep the Root Directory at `./`. The Express app in `src/server.js`
+is exported for Vercel's Express runtime; running `npm start` locally still
+starts the HTTP and Socket.IO server.
+
+Add backend variables under the Vercel project's Settings → Environment
+Variables; the ignored `backend/.env` file is only for local development. At
+minimum, configure `DATABASE_URL`, `JWT_SECRET` (at least 32 characters), and
+`CORS_ORIGINS`. For this storefront, set `CORS_ORIGINS` to
+`https://avenza-shopping.vercel.app` (add any other allowed origins as a
+comma-separated list, without trailing slashes). Set `FRONTEND_URL` to the
+storefront origin when enabling Stripe Checkout. Redeploy after changing
+environment variables.
+
 Run the backend HTTP smoke tests with `npm test`; these do not require a live
 database, SMTP server, or Firebase project.
 

@@ -9,6 +9,7 @@ process.env.STRIPE_SECRET_KEY = "";
 process.env.FIREBASE_PROJECT_ID = "test-firebase-project";
 
 const { app } = require("../src/app");
+const serverApp = require("../src/server");
 const { getApps } = require("firebase-admin/app");
 const { getFirebaseAuth } = require("../src/services/firebase");
 
@@ -31,6 +32,10 @@ test("health endpoint reports readiness without exposing configuration", async (
   const response = await fetch(`${baseUrl}/api/health`);
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { status: "ok" });
+});
+
+test("server entry point exports the Express app for Vercel", () => {
+  assert.equal(serverApp, app);
 });
 
 test("Firebase auth initializes using the configured project ID", () => {

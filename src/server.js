@@ -35,8 +35,12 @@ async function start() {
   process.once("SIGTERM", () => shutdown("SIGTERM"));
 }
 
-start().catch(async (error) => {
-  console.error("Backend startup failed", error.message);
-  await prisma.$disconnect();
-  process.exitCode = 1;
-});
+module.exports = app;
+
+if (require.main === module) {
+  start().catch(async (error) => {
+    console.error("Backend startup failed", error.message);
+    await prisma.$disconnect();
+    process.exitCode = 1;
+  });
+}
