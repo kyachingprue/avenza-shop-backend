@@ -73,22 +73,24 @@ database operation; the public signup and Google sign-in flows always create
 ordinary `USER` accounts. There is intentionally no public admin bootstrap
 endpoint.
 
-### Deploying the API to Vercel
+### Deploying the API to Render
 
-If the backend Vercel project is connected to the parent repository, set its
-Root Directory to `backend`; if it is connected directly to the backend
-repository, keep the Root Directory at `./`. The Express app in `src/server.js`
-is exported for Vercel's Express runtime; running `npm start` locally still
-starts the HTTP and Socket.IO server.
+Create a Render Web Service for the backend repository with the default root
+directory, build command `npm install`, and start command `npm start`. The
+`.node-version` file selects Node.js 22. The `postinstall` script runs
+`prisma generate` during installation, so Prisma Client is available before
+the server starts.
 
-Add backend variables under the Vercel project's Settings → Environment
-Variables; the ignored `backend/.env` file is only for local development. At
+Set backend environment variables in Render's Environment settings. At
 minimum, configure `DATABASE_URL`, `JWT_SECRET` (at least 32 characters), and
-`CORS_ORIGINS`. For this storefront, set `CORS_ORIGINS` to
-`https://avenza-shopping.vercel.app` (add any other allowed origins as a
-comma-separated list, without trailing slashes). Set `FRONTEND_URL` to the
-storefront origin when enabling Stripe Checkout. Redeploy after changing
-environment variables.
+`CORS_ORIGINS` with `https://avenza-shopping.vercel.app` (add other allowed
+origins as a comma-separated list, without trailing slashes). Set
+`FRONTEND_URL` to the storefront origin when enabling Stripe Checkout. Run
+`npm run prisma:deploy` as a one-time pre-deploy step (or a Render Pre-Deploy
+Command) after setting `DATABASE_URL` to apply migrations.
+
+The Express app is also exported from `src/server.js` for Vercel; running
+`npm start` on Render starts the HTTP and Socket.IO server.
 
 Run the backend HTTP smoke tests with `npm test`; these do not require a live
 database, SMTP server, or Firebase project.
