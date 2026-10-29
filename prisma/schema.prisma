@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  SELLER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum SellerRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                     String          @id @default(uuid()) @db.Uuid
+  email                  String          @unique
+  name                   String
+  avatarUrl              String?
+  passwordHash           String?
+  firebaseUid            String?         @unique
+  role                   UserRole        @default(USER)
+  emailVerified          Boolean         @default(false)
+  verificationCodeHash   String?
+  verificationExpiresAt  DateTime?
+  verificationAttempts   Int             @default(0)
+  products               Product[]
+  comments               Comment[]
+  orders                 Order[]
+  sellerRequests         SellerRequest[] @relation("SellerRequestUser")
+  reviewedSellerRequests SellerRequest[] @relation("SellerRequestReviewer")
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  @@index([role])
+}
+
+model CatalogProduct {
+  id          Int      @id
+  slug        String   @unique
+  name        String
+  brand       String
+  category    String
+  price       Decimal  @db.Decimal(10, 2)
+  stock       Int
+  catalogData Json     @db.JsonB
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([brand])
+}
+
+model CatalogPost {
+  id        String   @id
+  slug      String   @unique
+  title     String
+  postData  Json     @db.JsonB
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  price       Decimal   @db.Decimal(10, 2)
+  imageUrl    String?
+  sellerId    String    @db.Uuid
+  seller      User      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([sellerId, createdAt])
+  @@index([createdAt])
+}
+
+model Order {
+  id                    String      @id @default(uuid()) @db.Uuid
+  userId                String      @db.Uuid
+  stripeSessionId       String?     @unique
+  stripePaymentIntentId String?
+  status                OrderStatus @default(PENDING)
+  paymentStatus         String      @default("unpaid")
+  amountTotal           Int
+  currency              String      @default("usd")
+  customerEmail         String?
+  customerDetails       Json?       @db.JsonB
+  paymentMethodTypes    String[]    @default([])
+  receiptUrl            String?
+  items                 Json        @db.JsonB
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model SellerRequest {
+  id           String              @id @default(uuid()) @db.Uuid
+  userId       String              @db.Uuid
+  status       SellerRequestStatus @default(PENDING)
+  message      String?             @db.VarChar(1000)
+  reviewedById String?             @db.Uuid
+  reviewedAt   DateTime?
+  user         User                @relation("SellerRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer     User?               @relation("SellerRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  content   String   @db.VarChar(2000)
+  productId String   @db.Uuid
+  authorId  String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([productId, createdAt])
+  @@index([authorId])
+}
